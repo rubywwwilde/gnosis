@@ -1,0 +1,23 @@
+Loop Invariant: P(i) ≡ (sum = Σa[j] for j = 1 to i–1 )
+
+Initialization:
+– Before first iteration, i = 1
+– P(1) ≡ (sum = Σa[j] for j = 1 to 0)
+– This is an empty sum = 0
+– Since sum is initialized to 0, p(1) holds
+
+Maintenance:
+– Assume P(i) holds before iteration i
+– During iteration i:
+ * sum' = sum + a[i]
+ * i' = i + 1
+– Therefore:
+ * sum' = Σa[j] for j = 1 to i–1 + 1[i]
+ * sum' = Σa[j] for j = 1 to i
+ * sum' = Σa[j] for j = 1 to i'–1
+– Thus P(i') holds after iteration i
+
+Termination:
+– Loop terminates when i = n+1
+– By invariant, P(n+1) ≡ (sum = Σa[j] for j = 1 to n)
+– This is exactly the required sum of A[1:n]
