@@ -1,0 +1,23 @@
+CONCEPT Algorithm {
+  > Well defined computational procedure that takes input and produces output in a finite amount of time.
+
+  PARAMETERS {
+    INPUT := Value or set of values
+    OUTPUT := Value or set of values
+  }
+
+  PROPOSITIONS {
+    Algorithm is a TOOL for solving a Computational Problem.
+
+    EXAMPLE SortingProblem {
+      Input:  A sequence of n numbers <a1, a2, ..., an>.
+      Output:  A permutation (reordering) <a1', a2', ..., an'> of the input sequence such that a1' <= a2' <= ... <= an'.
+    }
+
+    An algorithm A is correct if, for every input x in the set of valid instances I:
+      • A(x) halts (finishes in finite time)
+      • A(x) = f(x), where f(x) is the correct output for x
+    In other words:
+      ∀ x ∈ I: A(x) halts and A(x) = f(x)
+  }
+}
