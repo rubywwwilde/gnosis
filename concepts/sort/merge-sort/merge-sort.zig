@@ -1,7 +1,7 @@
 const print = @import("std").debug.print;
 
 pub fn main() void {
-    var array = [_]i32{ 31, 41, 59, 26, 41, 58 };
+    var array = [_]i32{ 5, 1 };
 
     sort(&array, less_then);
 
@@ -12,7 +12,7 @@ pub fn main() void {
     print("].\n", .{});
 }
 
-fn less_then(a: ?i32, b: ?i32) bool {
+pub fn less_then(a: ?i32, b: ?i32) bool {
     if (a == null and b == null) return false;
     if (a == null) return false;
     if (b == null) return true;
@@ -21,29 +21,51 @@ fn less_then(a: ?i32, b: ?i32) bool {
 
 const PickFn = fn (?i32, ?i32) bool;
 
-fn sort(array: []i32, callback: PickFn) void {
-    // do split. I can slice the original array, but how do I keep all the indexes?
-    // do I make a separate array to keep track of arrays? that seems complex
-    // do I just merge elements one by one? how? that seems not smart
-    //
-    // If I do make a separate array of slices, then it's lenghts should be lenghts of initial array
-    //
-    // Do I use recursion here? So inside of sort I do split and merge?
-    if (array.len == 1) return;
+fn printArray(array: []const i32) void {
+    print("[ ", .{});
+    for (array) |value| {
+        print("{} ", .{value});
+    }
+    print("]", .{});
+}
+
+// Can I mutate an array using a slice?
+pub fn sort(array: []i32, callback: PickFn) void {
+    if (array.len < 2) return;
+
+    print("Splitting array with {} elements: ", .{array.len});
+    printArray(array);
+    print(".\n", .{});
 
     const left_edge = array.len / 2;
-    const right_edge = array.len / 2 + 1;
+    const right_edge = array.len / 2;
+    print("Left edge: {}. Right edge: {}\n", .{ left_edge, right_edge });
 
     const left_array = array[0..left_edge];
     const right_array = array[right_edge..array.len];
+
+    print("L Array: ", .{});
+    printArray(left_array);
+    print(".\n", .{});
+
+    print("R Array: ", .{});
+    printArray(right_array);
+    print(".\n", .{});
 
     sort(left_array, callback);
     sort(right_array, callback);
 
     merge(left_array, right_array, array, callback);
 }
+fn merge(left_slice: []const i32, right_slice: []const i32, writeTo: []i32, pick: PickFn) void {
+    // do memory allocation here to copy the slice to a new array™
 
-fn merge(left: []const i32, right: []const i32, writeTo: [*]i32, pick: PickFn) void {
+    print("Merging left: ", .{});
+    printArray(left);
+    print(" and right: ", .{});
+    printArray(right);
+    print(".\n", .{});
+
     var left_i: usize = 0;
     var right_i: usize = 0;
 
@@ -51,14 +73,34 @@ fn merge(left: []const i32, right: []const i32, writeTo: [*]i32, pick: PickFn) v
         const left_val = get_or_null(left, left_i);
         const right_val = get_or_null(right, right_i);
 
+        print("Comparing ", .{});
+        if (left_val) |val| {
+            print("{}", .{val});
+        } else {
+            print("null", .{});
+        }
+        print(" and ", .{});
+        if (right_val) |val| {
+            print("{}", .{val});
+        } else {
+            print("null", .{});
+        }
+        print("\n", .{});
+
         if (pick(left_val, right_val)) {
+            print("Picking left {} at index {}\n", .{ left[left_i], left_i });
             writeTo[left_i + right_i] = left[left_i];
             left_i += 1;
         } else {
+            print("Picking right {} at index {}\n", .{ right[right_i], right_i });
             writeTo[left_i + right_i] = right[right_i];
             right_i += 1;
         }
     }
+
+    print("Merged result: ", .{});
+    printArray(writeTo);
+    print(".\n", .{});
 }
 
 fn get_or_null(array: []const i32, index: usize) ?i32 {
