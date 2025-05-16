@@ -1,6 +1,8 @@
 // In zig there are slices and arrays
 // Slice is a pointer plus lenght
-//
+
+// *** ARRAY ***
+// Array have always a compile-time knonw leghth - what does it mean?
 
 // *** ARRAY TRICKS ***
 

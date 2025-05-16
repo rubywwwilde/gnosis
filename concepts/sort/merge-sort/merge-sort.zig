@@ -1,9 +1,10 @@
-const print = @import("std").debug.print;
+const std = @import("std");
+const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
     var array = [_]i32{ 5, 1 };
 
-    sort(&array, less_then);
+    try sort(&array, less_then);
 
     print("Array: [ ", .{});
     for (array) |value| {
@@ -30,7 +31,7 @@ fn printArray(array: []const i32) void {
 }
 
 // Can I mutate an array using a slice?
-pub fn sort(array: []i32, callback: PickFn) void {
+pub fn sort(array: []i32, callback: PickFn) !void {
     if (array.len < 2) return;
 
     print("Splitting array with {} elements: ", .{array.len});
@@ -52,13 +53,25 @@ pub fn sort(array: []i32, callback: PickFn) void {
     printArray(right_array);
     print(".\n", .{});
 
-    sort(left_array, callback);
-    sort(right_array, callback);
+    try sort(left_array, callback);
+    try sort(right_array, callback);
 
-    merge(left_array, right_array, array, callback);
+    try merge(left_array, right_array, array, callback);
 }
-fn merge(left_slice: []const i32, right_slice: []const i32, writeTo: []i32, pick: PickFn) void {
+fn merge(left_slice: []const i32, right_slice: []const i32, writeTo: []i32, pick: PickFn) !void {
     // do memory allocation here to copy the slice to a new array™
+    // is it okay to create allocator inside of a function, or do I need to pass it to the function?
+    print("left slice len: {}", .{left_slice.len});
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    // should I rather use arena allocator here? what are the benefits?
+    const left = try allocator.alloc(i32, left_slice.len);
+    const right = try allocator.alloc(i32, right_slice.len);
+    defer allocator.free(left);
+    defer allocator.free(right);
+
+    @memcpy(left, left_slice);
+    @memcpy(right, right_slice);
 
     print("Merging left: ", .{});
     printArray(left);
