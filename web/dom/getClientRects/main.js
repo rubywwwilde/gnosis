@@ -1,64 +1,82 @@
+let lastHighlightAction = null;
 
 window.addEventListener("click", e => {
   switch(e.target.id) {
     case "button-rects-all":
-      showClientRectsForBlocks()
+      lastHighlightAction = showClientRectsForBlocks;
+      showClientRectsForBlocks();
       break;
     case "button-rects-text":
-      highlightTextRects()
+      lastHighlightAction = highlightTextRects;
+      highlightTextRects();
       break;
+    case "button-rects-lines":
+      lastHighlightAction = highlightRectsLines;
+      highlightRectsLines()
+      break
     case "button-rects-clear":
-      clearElementsOfClass("highlight-item")
+      lastHighlightAction = null;
+      clearElementsOfClass("highlight-item");
       break;
   }
-})
+});
+
+window.addEventListener("resize", () => {
+  if (lastHighlightAction) {
+    lastHighlightAction();
+  }
+});
 
 function clearElementsOfClass(className) {
-
-  const elements = Array.from(document.getElementsByClassName(className))
-
-  elements.forEach(el => el.remove())
+  const elements = Array.from(document.getElementsByClassName(className));
+  elements.forEach(el => el.remove());
 }
 
 function showClientRectsForBlocks() {
-  clearElementsOfClass("highlight-item")
-  const textBlocks = document.querySelectorAll(".text-block")
-  debugger
-  textBlocks.forEach(showClientRects)
+  clearElementsOfClass("highlight-item");
+  const textBlocks = document.querySelectorAll(".text-block");
+  textBlocks.forEach(showClientRects);
 }
 
 function highlightTextRects() {
-  clearElementsOfClass("highlight-item")
-  const textBlocks = document.querySelectorAll(".text-block")
-
-  textBlocks.forEach(splitIntoTextRects)
+  clearElementsOfClass("highlight-item");
+  const textBlocks = document.querySelectorAll(".text-block");
+  textBlocks.forEach(x => {
+    higlightRects(splitIntoTextRects(x))
+  });
 }
 
+function highlightRectsLines() {
+  clearElementsOfClass("highlight-item");
+  const textBlocks = document.querySelectorAll(".text-block");
+  textBlocks.forEach(x => {
+    const lines = splitIntoLinesHorizontal(x);
+    // debugger;
+      higlightRects(lines)
+    });
+}
 
 function showClientRects(element) {
-  const range = document.createRange()
-  range.selectNodeContents(element)
-
-  const rects = range.getClientRects()
-
-  higlightRects(Array.from(rects))
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const rects = range.getClientRects();
+  higlightRects(Array.from(rects));
 }
 
 function splitIntoTextRects(element) {
   const walker = document.createTreeWalker(
     element,
     NodeFilter.SHOW_TEXT,
-  )
+  );
 
-  const rects = []
-
-  const range = document.createRange()
+  const rects = [];
+  const range = document.createRange();
   while (walker.nextNode()) {
     range.selectNodeContents(walker.currentNode);
-    rects.push(...Array.from(range.getClientRects()))
+    rects.push(...Array.from(range.getClientRects()));
   }
 
-  higlightRects(rects)
+  return rects
 }
 
 function higlightRects(rects) {
@@ -83,4 +101,92 @@ function higlightRects(rects) {
 
     document.body.append(el);
   });
+}
+
+class Line {
+  constructor(index, rect) {
+    this.index = index;
+    this.rects = [rect];
+    this.left = rect.left;
+    this.right = rect.right;
+    this.bottom = rect.bottom;
+    this.top = rect.top;
+  }
+
+  add(rect) {
+    this.rects.push(rect)
+
+    this.left = Math.min(this.left, rect.left)
+    this.right = Math.max(this.right, rect.right)
+    this.top = Math.min(this.top, rect.top)
+    this.bottom = Math.max(this.bottom, rect.bottom)
+  }
+
+  get width() {
+    return this.right - this.left
+  }
+
+  get height() {
+    return this.bottom- this.top
+  }
+}
+
+/**
+ * Returns visual lines for a given element if the are any.
+ * Lines are returned in visual order.
+ * Does not work when an element streches multiple columns.
+ *
+ * @param {HTMLElement} el
+ */
+function splitIntoLinesHorizontal(el) {
+  const textRects = splitIntoTextRects(el);
+
+  textRects.filter(r => r.height !== 0) // in what case it might be a problem?
+
+
+  const lines = []
+  textRects.forEach(rect => {
+    if (lines.length === 0 ) {
+      lines.push(new Line(0, {
+        left: rect.left,
+        right: rect.right,
+        bottom: rect.bottom,
+        top: rect.top,
+        node: rect.node,
+        range: rect.range
+      }))
+    }
+
+    const EPS_Y = 1
+
+    const lastLine = lines.at(-1);
+    const overlapY = calcOverlapY(lastLine, rect)
+    const minHeight = Math.min(getHeight(rect), getHeight(lastLine))
+    const reqHeight = Math.max(EPS_Y, minHeight/2)
+
+    if (overlapY >= reqHeight) {
+      lastLine.add(rect)
+      return
+    }
+
+    lines.push(new Line(0, {
+      left: rect.left,
+      right: rect.right,
+      bottom: rect.bottom,
+      top: rect.top,
+      node: rect.node,
+      range: rect.range
+    }))
+
+  })
+
+  return lines
+  }
+
+function getHeight(x) {
+  return x.bottom - x.top
+}
+
+function calcOverlapY(a, b) {
+  return Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
 }

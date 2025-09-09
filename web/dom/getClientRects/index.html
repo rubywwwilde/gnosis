@@ -13,6 +13,14 @@
       .text-block {
         font-size: 20px;
         line-height: 1.5em;
+        padding: 10px;
+        border: 1px solid #000;
+      }
+
+      .vertical-text {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        padding: 10px;
       }
 
       .highlight-badge {
@@ -37,6 +45,7 @@
     Highlight:
     <button id="button-rects-all">all rects</button>
     <button id="button-rects-text">text rects</button>
+    <button id="button-rects-lines">lines rects</button>
     <button id="button-rects-clear">clear</button>
     <main id="main">
       <h3>DIV with spans</h3>
@@ -52,7 +61,7 @@
         suddenly a White Rabbit with pink eyes ran close by her.
       </div>
 
-      <h3>DIV with a block element inside</h3>
+      <h3>Block element inside</h3>
       <div class="text-block">
         <b>Alice</b> was beginning to get <em>very</em> tired of sitting by her
         sister on the bank, and of having nothing to do: once or twice she had
@@ -66,6 +75,23 @@
         close by her.
       </div>
 
+      <h3>Really long span</h3>
+      <div class="text-block">
+        <b>Alice</b> was beginning to get
+        <em
+          >very tired of sitting by her sister on the bank, and of having
+          nothing to do: once or twice she had peeped into the book her sister
+          was reading, but it <b>had no pictures</b> or conversations in it,
+          “and what is the use of a book,” thought Alice “without pictures or
+          conversations?” So she was</em
+        >
+        considering in her own <b>mind</b> (as well as she could, for the hot
+        day made her feel very sleepy and stupid), whether the pleasure of
+        making a daisy-chain would be worth the trouble of getting up and
+        picking the daisies, when suddenly a White Rabbit with pink eyes ran
+        close by her.
+      </div>
+
       <h3>Tight lines + emoji inline</h3>
       <div class="text-block" style="line-height: 1">
         normal <span style="font-size: 48px; vertical-align: baseline">😃</span>
@@ -75,6 +101,22 @@
         <br />
         third line for stability; more text just to ensure we have multiple
         fragments.
+      </div>
+      <h3>Arabic</h3>
+      <div class="text-block">
+        كانت <b>أليس</b> قد بدأت تشعر بتعب <em>شديد</em> من الجلوس بجوار أختها
+        على ضفة النهر، ومن عدم وجود ما تفعله؛ فقد تطلعت مرة أو مرتين إلى الكتاب
+        الذي كانت أختها تقرأه، لكنه لم يكن يحتوي على صور أو محادثات، فقالت أليس
+        في نفسها: "وما فائدة كتاب بلا صور أو محادثات؟". وهكذا بدأت تفكر في
+        <b>ذهنها</b> (بقدر ما تستطيع، إذ جعلها اليوم الحار تشعر بالنعاس والكسل)
+        عمّا إذا كان متعة صنع عقد من زهور الأقحوان تستحق عناء النهوض وقطف
+        الأزهار، حينما مرّ فجأة بالقرب منها أرنب أبيض ذو عينين ورديتين.
+      </div>
+
+      <h3>Vertical text</h3>
+      <div class="text-block vertical-text">
+        <b>アリス</b
+        >は、川岸で姉のそばに座っていることに<em>とても</em>退屈してきていました。することもなく、何度か姉が読んでいる本をのぞき込んでみましたが、その本には絵も会話もありませんでした。「絵も会話もない本なんて、何の役に立つのかしら」とアリスは思いました。そこで彼女は、自分の<b>心</b>の中で（暑い日だったのでとても眠くてぼんやりしていましたが）デイジーチェーンを作る楽しさが、立ち上がって花を摘む手間に見合うかどうかを考えていました。そのとき、突然、ピンク色の目をした白ウサギが彼女のすぐそばを駆け抜けたのです。
       </div>
     </main>
     <script src="./main.js"></script>
