@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Range.getClientRects</title>
+    <style>
+      main {
+        width: clamp(300px, 75%, 720px);
+        margin: auto;
+      }
+
+      .text-block {
+        font-size: 20px;
+        line-height: 1.5em;
+      }
+
+      .highlight-badge {
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        width: 16px;
+        height: 16px;
+        background-color: rgba(255, 0, 0, 0.6);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: bold;
+        z-index: 1;
+      }
+    </style>
+  </head>
+  <body>
+    Highlight:
+    <button id="button-rects-all">all rects</button>
+    <button id="button-rects-text">text rects</button>
+    <button id="button-rects-clear">clear</button>
+    <main id="main">
+      <h3>DIV with spans</h3>
+      <div class="text-block">
+        <b>Alice</b> was beginning to get <em>very</em> tired of sitting by her
+        sister on the bank, and of having nothing to do: once or twice she had
+        peeped into the book her sister was reading, but it had no pictures or
+        conversations in it, “and what is the use of a book,” thought Alice
+        “without pictures or conversations?” So she was considering in her own
+        <b>mind</b> (as well as she could, for the hot day made her feel very
+        sleepy and stupid), whether the pleasure of making a daisy-chain would
+        be worth the trouble of getting up and picking the daisies, when
+        suddenly a White Rabbit with pink eyes ran close by her.
+      </div>
+
+      <h3>DIV with a block element inside</h3>
+      <div class="text-block">
+        <b>Alice</b> was beginning to get <em>very</em> tired of sitting by her
+        sister on the bank, and of having nothing to do: once or twice she had
+        peeped into the book her sister was reading, but it had no pictures or
+        conversations in it, “and what is the use of a book,” thought Alice
+        <div>“without pictures or conversations?”</div>
+        So she was considering in her own <b>mind</b> (as well as she could, for
+        the hot day made her feel very sleepy and stupid), whether the pleasure
+        of making a daisy-chain would be worth the trouble of getting up and
+        picking the daisies, when suddenly a White Rabbit with pink eyes ran
+        close by her.
+      </div>
+
+      <h3>Tight lines + emoji inline</h3>
+      <div class="text-block" style="line-height: 1">
+        normal <span style="font-size: 48px; vertical-align: baseline">😃</span>
+        text at the end of the first line should wrap soon to provoke overlap.
+        <br />
+        next line right here — this is intended to start immediately below.
+        <br />
+        third line for stability; more text just to ensure we have multiple
+        fragments.
+      </div>
+    </main>
+    <script src="./main.js"></script>
+  </body>
+</html>
