@@ -138,16 +138,16 @@ class Line {
  *
  * @param {HTMLElement} el
  */
-function splitIntoLinesHorizontal(el) {
-  const textRects = splitIntoTextRects(el);
-
-  textRects.filter(r => r.height !== 0) // in what case it might be a problem?
+export function splitIntoLinesHorizontal(el) {
+  const textRects = splitIntoTextRects(el)
+    .filter(r => r.height !== 0) // why does it actually makes sense to filter
 
 
   const lines = []
-  textRects.forEach(rect => {
+  const getLineNumber = () => lines.length + 1
+  textRects.forEach((rect, index) => {
     if (lines.length === 0 ) {
-      lines.push(new Line(0, {
+      lines.push(new Line(getLineNumber(), {
         left: rect.left,
         right: rect.right,
         bottom: rect.bottom,
@@ -169,7 +169,7 @@ function splitIntoLinesHorizontal(el) {
       return
     }
 
-    lines.push(new Line(0, {
+    lines.push(new Line(getLineNumber(), {
       left: rect.left,
       right: rect.right,
       bottom: rect.bottom,
