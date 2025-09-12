@@ -1,4 +1,4 @@
-import { clearElementsOfClass, higlightRects, parseElementToLinesAndNodes } from "../getClientRects/main";
+import { clearElementsOfClass, highlightRect, higlightRects, parseElementToLinesAndNodes } from "../getClientRects/main";
 
 const tooltip = document.getElementById("tooltip");
 
@@ -153,6 +153,16 @@ document.addEventListener('selectionchange', (e) => {
   const newY = (rect.top + rect.bottom) / 2
   const offset = resolveOffsetAtXY(x ,newY)
 
+  const targetRange = document.createRange()
+
+  const position = document.caretPositionFromPoint(x, newY)
+  if (!position) return;
+  targetRange.setStart(position.offsetNode, position.offset)
+  targetRange.setEnd(position.offsetNode, position.offset)
+
+  const targetRect = targetRange.getBoundingClientRect()
+
+  highlightRect("×", targetRect, "rgba(0, 0, 255, 0.7)")
   // calculate the best position to jump.
   higlightRects([rect])
 

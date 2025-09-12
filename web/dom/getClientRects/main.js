@@ -105,28 +105,50 @@ export function splitIntoRectsByTextNode(element) {
   return textNodeToRects
 }
 
+export function highlightElement({
+  badgeTitle,
+  top,
+  left,
+  width,
+  height,
+  color
+}) {
+  const el = document.createElement("div");
+  el.className = "highlight-item";
+
+  const newTop = top + window.scrollY;
+  const newLeft = left + window.scrollX;
+
+  el.style.position = "absolute";
+  el.style.top = newTop + "px";
+  el.style.left = newLeft + "px";
+  el.style.width = width + "px";
+  el.style.height = height + "px";
+  el.style.border = `1px dashed ${color}`;
+  el.style.pointerEvents = "none"
+
+  const badge = document.createElement("div");
+  badge.className = "highlight-badge";
+  badge.textContent = badgeTitle;
+  el.append(badge);
+
+  document.body.append(el);
+}
+
+export function highlightRect(badgeTitle, rect, color) {
+  highlightElement({
+    badgeTitle,
+    top: rect.top,
+    left: rect.left,
+    height: rect.height,
+    width: rect.width,
+    color: color ?? "rgba(255, 0, 0, 0.3)"
+  })
+}
+
 export function higlightRects(rects) {
   for (const [i, rect] of enumerate(rects)) {
-    const el = document.createElement("div");
-    el.className = "highlight-item";
-
-    const top = rect.top + window.scrollY;
-    const left = rect.left + window.scrollX;
-
-    el.style.position = "absolute";
-    el.style.top = top + "px";
-    el.style.left = left + "px";
-    el.style.width = rect.width + "px";
-    el.style.height = rect.height + "px";
-    el.style.border = "1px dashed rgba(255, 0, 0, 0.6)";
-    el.style.pointerEvents = "none"
-
-    const badge = document.createElement("div");
-    badge.className = "highlight-badge";
-    badge.textContent = i + 1;
-    el.append(badge);
-
-    document.body.append(el);
+    highlightRect(i + 1, rect)
   }
 }
 
