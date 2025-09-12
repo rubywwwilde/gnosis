@@ -1,11 +1,10 @@
-import { splitIntoLinesHorizontal } from "../getClientRects/main";
+import { clearElementsOfClass, higlightRects, parseElementToLinesAndNodes } from "../getClientRects/main";
 
 const tooltip = document.getElementById("tooltip");
 
 const blocks = Array.from(document.getElementsByClassName("text-block"))
 
 
-// 2) Collapse element contents into visual line “bands” (top/bottom/left/right per line)
 function lineBandsForElement(el, eps = 2 / devicePixelRatio) {
   const whole = document.createRange();
   whole.setStart(el, 0);
@@ -29,7 +28,6 @@ function lineBandsForElement(el, eps = 2 / devicePixelRatio) {
   return rows;
 }
 
-// 3) Resolve a caret position inside `el` at absolute X on its last (or first) visual line
 export function resolveAtAbsX(
   el,
   absX,
@@ -58,18 +56,109 @@ export function resolveAtAbsX(
     : { node: pos.startContainer, offset: pos.startOffset };
 }
 
-function resolveOfssetAtXY(x, y) {
-  const els = document.elementsFromPoint(e.clientX, e.clientY);
-  const block = els.find(x => x.classList.contains("text-block"))
-
-
+/**
+ *
+ * @param {{ top: number; bottom: number}} lines - Y-positions of horizontal lines, sorted in ascending order (top→bottom).
+ * @param {number} y
+ */
+function resolveLineAtY(lines, y) {
+  return lines.find(line => line.top < y && line.bottom > y)
 }
 
-document.addEventListener('click', (e) => {
-  const els = document.elementsFromPoint(e.clientX, e.clientY);
-  const block = els.find(x => x.classList.contains("text-block"))
+function resolveRectAtX(line, x) {
+  return line.rects.find(rect => rect.left < x && rect.right > x) || line.rects.at(-1)
+}
 
-  console.log("Block", block, splitIntoLinesHorizontal(block));
+function rangeFromPoint(x, y) {
+  if (document.caretRangeFromPoint) {
+    return document.caretRangeFromPoint(x, y);        // Chrome/Safari
+  }
+  if (document.caretPositionFromPoint) {              // Firefox
+    const pos = document.caretPositionFromPoint(x, y);
+    if (!pos) return null;
+    const r = document.createRange();
+    r.setStart(pos.offsetNode, pos.offset);
+    r.collapse(true);
+    return r;
+  }
+  return null;
+}
+
+function resolveOffsetAtXY(x, y) {
+  // todo feat to use already caculated data
+  const els = document.elementsFromPoint(x, y);
+  const block = els.find(x => x.classList.contains("text-block"))
+  if (!block) return;
+
+  const caret = rangeFromPoint(x, y);
+  if (!caret || !block.contains(caret.startContainer)) return null;
+
+  const {textNodeToRects} = parseElementToLinesAndNodes(block)
+  const {offset, offsetNode} = document.caretPositionFromPoint(x, y)
+
+  const range = document.createRange()
+  let elementFound = false;
+  let accOffset = 0
+  for (const textNode of textNodeToRects.keys()) {
+    if (textNode === offsetNode) {
+      elementFound = true;
+      break;
+    }
+    range.selectNodeContents(textNode)
+    accOffset += range.endOffset
+  }
+  if (!elementFound) {
+    throw new Error("This should never happen. Element not found in the block")
+  }
+
+  return accOffset + offset
+}
+
+
+document.addEventListener('selectionchange', (e) => {
+  const selection = document.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0).cloneRange();
+
+  range.collapse(true);
+
+  const r = range.getBoundingClientRect();
+
+  var x = (r.left + r.right)/2;
+  var y = (r.top + r.bottom)/2;
+  console.log(x, y)
+
+  clearElementsOfClass("highlight-item");
+
+  const els = document.elementsFromPoint(x, y);
+  const block = els.find(x => x.classList.contains("text-block"))
+  if (!block) return;
+
+  const {lines, textNodeToRects} = parseElementToLinesAndNodes(block)
+
+  const line = resolveLineAtY(lines, y)
+  if (!line) {
+    console.warn("line not found")
+    return
+  }
+
+  const index = line.index - 2
+  if (index < 0) return;
+
+  const lineHigher = lines[index]
+
+  const rect = resolveRectAtX(lineHigher, x)
+  if (!rect) return
+  const newY = (rect.top + rect.bottom) / 2
+  const offset = resolveOffsetAtXY(x ,newY)
+
+  // calculate the best position to jump.
+  higlightRects([rect])
+
+
+  console.log(offset)
+
 })
 
 
@@ -81,7 +170,9 @@ document.addEventListener("mousemove", (e) => {
       return
     };
 
-    tooltip.textContent = resolveAtAbsX(el, e.x, "last")?.offset
+    const offset = resolveOffsetAtXY(e.x, e.y)
+
+    tooltip.textContent = String(offset)
 
     tooltip.style.left = e.pageX + 10 + "px";
     tooltip.style.top = e.pageY + 10 + "px";
