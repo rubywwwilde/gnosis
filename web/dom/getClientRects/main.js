@@ -153,9 +153,9 @@ export function higlightRects(rects) {
 }
 
 class Line {
-  constructor({ index, rects, left, right, top, bottom }) {
+  constructor({ index: lineNumber, rects, left, right, top, bottom }) {
     // counting from 1 is extremely confusing
-    this.index = index;
+    this.lineNumber = lineNumber;
     this.rects = rects;
     this.left = left;
     this.right = right;
@@ -205,7 +205,7 @@ function groupRectsByLines(textRectsIterable) {
   for (const rect of textRectsIterable) {
     if (lines.length === 0 ) {
       lines.push(new Line({
-            index: 1,
+            lineNumber: 1,
             rects: [rect],
             left: rect.left,
             right: rect.right,
@@ -227,7 +227,7 @@ function groupRectsByLines(textRectsIterable) {
     }
 
     lines.push(new Line({
-      index: getLineNumber(),
+      lineNumber: getLineNumber(),
       rects: [rect],
       left: rect.left,
       right: rect.right,
