@@ -1,0 +1,4 @@
+/node_modules
+
+# For the binaries
+*.o
