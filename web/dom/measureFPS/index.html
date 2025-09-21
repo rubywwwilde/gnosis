@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FPS Performance Monitor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        min-height: 100vh;
+        font-family: "Courier New", monospace;
+        overflow: hidden;
+      }
+
+      .background-grid {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 50px 50px;
+        animation: gridMove 20s linear infinite;
+        z-index: 1;
+      }
+
+      @keyframes gridMove {
+        0% {
+          transform: translate(0, 0);
+        }
+        100% {
+          transform: translate(50px, 50px);
+        }
+      }
+
+      #fps-toolbox {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.9);
+        color: #00ff00;
+        padding: 20px;
+        border-radius: 12px;
+        border: 2px solid #00ff00;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        z-index: 999999;
+        backdrop-filter: blur(10px);
+      }
+
+      #fps-value {
+        font-size: 24px;
+        font-weight: bold;
+        text-shadow: 0 0 10px #00ff00;
+      }
+
+      button {
+        background: linear-gradient(45deg, #00aa00, #00ff00);
+        border: none;
+        color: black;
+        padding: 8px 16px;
+        margin: 5px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: monospace;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+
+      button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+      }
+
+      button:active {
+        transform: scale(0.95);
+      }
+
+      .animated-element {
+        position: fixed;
+        border-radius: 50%;
+        z-index: 999998;
+      }
+
+      .particle {
+        position: fixed;
+        width: 4px;
+        height: 4px;
+        background: #fff;
+        border-radius: 50%;
+        z-index: 999997;
+        pointer-events: none;
+      }
+
+      .title {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 48px;
+        text-align: center;
+        z-index: 2;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.6;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.05);
+        }
+      }
+
+      .performance-stats {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #ccc;
+      }
+
+      .fps-graph {
+        width: 200px;
+        height: 60px;
+        border: 1px solid #00ff00;
+        margin-top: 10px;
+        position: relative;
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      .fps-bar {
+        position: absolute;
+        bottom: 0;
+        width: 2px;
+        background: #00ff00;
+        transition: height 0.1s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background-grid"></div>
+
+    <div class="title">
+      FPS PERFORMANCE MONITOR
+      <div
+        style="
+          font-size: 16px;
+          margin-top: 10px;
+          color: rgba(255, 255, 255, 0.6);
+        "
+      >
+        Real-time frame rate visualization
+      </div>
+    </div>
+
+    <div id="fps-toolbox">
+      <div style="margin-bottom: 10px; font-size: 18px">
+        FPS: <span id="fps-value">0</span>
+      </div>
+      <div class="fps-graph" id="fps-graph"></div>
+      <div style="margin: 10px 0">
+        <button id="fps-start">🚀 Start</button>
+        <button id="fps-stop">⏹️ Stop</button>
+      </div>
+      <div id="fps-status" class="performance-stats">Ready to start...</div>
+      <div class="performance-stats">
+        <div>
+          Min: <span id="min-fps">-</span> | Max: <span id="max-fps">-</span>
+        </div>
+        <div>
+          Avg: <span id="avg-fps">-</span> | Frames:
+          <span id="frame-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const fpsValue = document.getElementById("fps-value");
+        const startBtn = document.getElementById("fps-start");
+        const stopBtn = document.getElementById("fps-stop");
+        const status = document.getElementById("fps-status");
+        const minFpsElement = document.getElementById("min-fps");
+        const maxFpsElement = document.getElementById("max-fps");
+        const avgFpsElement = document.getElementById("avg-fps");
+        const frameCountElement = document.getElementById("frame-count");
+        const fpsGraph = document.getElementById("fps-graph");
+
+        let fpsHistory = [];
+        let totalFrames = 0;
+        let minFps = Infinity;
+        let maxFps = 0;
+
+        for (let i = 0; i < 100; i++) {
+          const bar = document.createElement("div");
+          bar.className = "fps-bar";
+          bar.style.left = i * 2 + "px";
+          fpsGraph.appendChild(bar);
+        }
+        const fpsBars = document.querySelectorAll(".fps-bar");
+
+        const elements = [];
+        const particles = [];
+
+        function createAnimatedElement(color, size, startX, startY) {
+          const element = document.createElement("div");
+          element.className = "animated-element";
+          Object.assign(element.style, {
+            width: size + "px",
+            height: size + "px",
+            background: `radial-gradient(circle, ${color}, ${color}88)`,
+            left: startX + "px",
+            top: startY + "px",
+            boxShadow: `0 0 ${size / 2}px ${color}`,
+          });
+          document.body.appendChild(element);
+          return element;
+        }
+
+        function createParticle() {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          Object.assign(particle.style, {
+            left: Math.random() * window.innerWidth + "px",
+            top: Math.random() * window.innerHeight + "px",
+            background: `hsl(${Math.random() * 360}, 70%, 70%)`,
+          });
+          document.body.appendChild(particle);
+          return {
+            element: particle,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            life: 100,
+            maxLife: 100,
+          };
+        }
+
+        elements.push({
+          element: createAnimatedElement("#ff4444", 40, 50, 100),
+          x: 50,
+          y: 100,
+          vx: 3,
+          vy: 2,
+          type: "bouncing",
+        });
+        elements.push({
+          element: createAnimatedElement("#44ff44", 30, 200, 300),
+          x: 200,
+          y: 300,
+          angle: 0,
+          radius: 100,
+          centerX: 300,
+          centerY: 400,
+          type: "circular",
+        });
+        elements.push({
+          element: createAnimatedElement("#4444ff", 50, 400, 200),
+          x: 400,
+          y: 200,
+          vx: -2,
+          vy: 3,
+          type: "bouncing",
+        });
+        elements.push({
+          element: createAnimatedElement("#ff44ff", 25, 600, 150),
+          x: 600,
+          y: 150,
+          angle: Math.PI,
+          radius: 80,
+          centerX: 700,
+          centerY: 250,
+          type: "circular",
+        });
+
+        let running = false;
+        let frameHandle = null;
+
+        function updateFPSGraph(fps) {
+          fpsHistory.push(fps);
+          if (fpsHistory.length > 100) {
+            fpsHistory.shift();
+          }
+
+          fpsBars.forEach((bar, index) => {
+            if (index < fpsHistory.length) {
+              const height = Math.min((fpsHistory[index] / 120) * 60, 60);
+              bar.style.height = height + "px";
+              const hue = (height / 60) * 120; // Red to green
+              bar.style.background = `hsl(${hue}, 100%, 50%)`;
+            }
+          });
+        }
+
+        function run() {
+          running = true;
+          status.textContent = "🚀 Running performance analysis...";
+          let frames = 0;
+          let lastTime = performance.now();
+          totalFrames = 0;
+          minFps = Infinity;
+          maxFps = 0;
+          fpsHistory = [];
+
+          function loop(now) {
+            if (!running) {
+              status.textContent = "⏹️ Analysis stopped.";
+              return;
+            }
+
+            frames++;
+            totalFrames++;
+
+            if (now - lastTime >= 1000) {
+              const fps = Math.round((frames * 1000) / (now - lastTime));
+              fpsValue.textContent = fps;
+
+              minFps = Math.min(minFps, fps);
+              maxFps = Math.max(maxFps, fps);
+              const avgFps = Math.round(
+                totalFrames / ((now - performance.timeOrigin) / 1000),
+              );
+
+              minFpsElement.textContent = minFps;
+              maxFpsElement.textContent = maxFps;
+              avgFpsElement.textContent = avgFps;
+              frameCountElement.textContent = totalFrames;
+
+              updateFPSGraph(fps);
+
+              frames = 0;
+              lastTime = now;
+            }
+
+            elements.forEach((elem) => {
+              if (elem.type === "bouncing") {
+                elem.x += elem.vx;
+                elem.y += elem.vy;
+
+                const size = parseInt(elem.element.style.width);
+                if (elem.x <= 0 || elem.x >= window.innerWidth - size) {
+                  elem.vx *= -1;
+                  elem.x = Math.max(
+                    0,
+                    Math.min(elem.x, window.innerWidth - size),
+                  );
+                }
+                if (elem.y <= 0 || elem.y >= window.innerHeight - size) {
+                  elem.vy *= -1;
+                  elem.y = Math.max(
+                    0,
+                    Math.min(elem.y, window.innerHeight - size),
+                  );
+                }
+
+                elem.element.style.left = elem.x + "px";
+                elem.element.style.top = elem.y + "px";
+              } else if (elem.type === "circular") {
+                elem.angle += 0.05;
+                elem.x = elem.centerX + Math.cos(elem.angle) * elem.radius;
+                elem.y = elem.centerY + Math.sin(elem.angle) * elem.radius;
+
+                elem.element.style.left = elem.x + "px";
+                elem.element.style.top = elem.y + "px";
+                elem.element.style.transform = `rotate(${elem.angle}rad)`;
+              }
+            });
+
+            if (Math.random() < 0.1) {
+              particles.push(createParticle());
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+              const p = particles[i];
+              const currentX = parseFloat(p.element.style.left);
+              const currentY = parseFloat(p.element.style.top);
+
+              p.element.style.left = currentX + p.vx + "px";
+              p.element.style.top = currentY + p.vy + "px";
+              p.life--;
+
+              const opacity = p.life / p.maxLife;
+              p.element.style.opacity = opacity;
+
+              if (p.life <= 0) {
+                p.element.remove();
+                particles.splice(i, 1);
+              }
+            }
+
+            frameHandle = requestAnimationFrame(loop);
+          }
+
+          frameHandle = requestAnimationFrame(loop);
+        }
+
+        function stop() {
+          running = false;
+          if (frameHandle) {
+            cancelAnimationFrame(frameHandle);
+          }
+
+          particles.forEach((p) => p.element.remove());
+          particles.length = 0;
+        }
+
+        startBtn.onclick = () => {
+          if (!running) run();
+        };
+
+        stopBtn.onclick = stop;
+
+        window.addEventListener("resize", () => {
+          elements.forEach((elem) => {
+            if (elem.type === "circular") {
+              elem.centerX = Math.min(elem.centerX, window.innerWidth - 100);
+              elem.centerY = Math.min(elem.centerY, window.innerHeight - 100);
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
